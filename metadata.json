@@ -1,0 +1,6 @@
+{
+  "name": "Reonzy Akbar Portfolio",
+  "description": "A highly immersive, futuristic dark-themed web portfolio for Reonzy Akbar with responsive navigation, dynamic project manager, and sleek animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
