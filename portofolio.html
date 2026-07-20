@@ -105,7 +105,54 @@
     .color-rose { --accent-color: #f43f5e; --accent-glow: rgba(244, 63, 94, 0.2); }
   </style>
 </head>
-<body class="bg-cyber-bg text-[#e0e0e0] font-sans relative min-h-screen flex flex-col overflow-x-hidden scanline cyber-grid selection:bg-cyan-500/30 selection:text-white color-cyan">
+<body class="bg-cyber-bgv text-[#e0e0e0] font-sans relative min-h-screen flex flex-col overflow-x-hidden scanline cyber-grid selection:bg-cyan-500/30 selection:text-white color-cyan">
+
+  <!-- LOGIN MODAL OVERLAY -->
+  <div id="login-overlay" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md border border-white/15 bg-cyber-card rounded-xl overflow-hidden p-8 relative accent-shadow">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-cyan-500"></div>
+      
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-white/20 flex items-center justify-center accent-bg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">AUTHENTICATION REQUIRED</h2>
+        <p class="text-xs text-white/40 font-mono uppercase tracking-wider">Control Panel Access Terminal</p>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-[10px] font-mono uppercase tracking-wider text-white/40 mb-2">Username</label>
+          <input type="text" id="login-username" required placeholder="Masukkan username" autocomplete="username" class="w-full bg-cyber-bg border border-white/10 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors font-mono" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-mono uppercase tracking-wider text-white/40 mb-2">Password</label>
+          <input type="password" id="login-password" required placeholder="Masukkan password" autocomplete="current-password" class="w-full bg-cyber-bg border border-white/10 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors font-mono" />
+        </div>
+
+        <div id="login-error" class="hidden text-[10px] font-mono text-red-400 bg-red-950/20 border border-red-500/30 rounded px-3 py-2">
+          ✗ AKSES DITOLAK: Kredensial tidak valid
+        </div>
+
+        <button type="submit" class="w-full text-[10px] uppercase font-mono tracking-widest bg-white text-black font-bold hover:bg-white/95 px-5 py-3 rounded transition-all flex items-center justify-center gap-2 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+          AUTENTIKASI
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-[9px] font-mono text-white/20 uppercase tracking-wider">
+        Secure Access Terminal v2.2
+      </div>
+    </div>
+  </div>
 
   <!-- Background Ambience Orbs -->
   <div class="absolute top-1/4 left-1/4 w-[40vw] h-[40vw] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
@@ -341,19 +388,23 @@
             </p>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            <button onclick="openProjectModal(false)" class="text-[9px] uppercase font-mono tracking-widest bg-white text-black font-semibold hover:bg-white/95 px-4 py-2 rounded transition-all flex items-center gap-1.5 shadow-lg cursor-pointer">
+          <div class="flex flex-wrap gap-2" id="control-panel-actions">
+            <button onclick="handleProtectedAction(() => openProjectModal(false))" class="text-[9px] uppercase font-mono tracking-widest bg-white text-black font-semibold hover:bg-white/95 px-4 py-2 rounded transition-all flex items-center gap-1.5 shadow-lg cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Tambah Project
             </button>
-            <button onclick="exportJSONBackup()" class="text-[9px] uppercase font-mono tracking-widest border border-white/10 hover:border-white/25 hover:bg-white/5 text-white/70 px-3 py-2 rounded transition-all flex items-center gap-1.5 cursor-pointer" title="Ekspor Cadangan Proyek">
+            <button onclick="handleProtectedAction(() => exportJSONBackup())" class="text-[9px] uppercase font-mono tracking-widest border border-white/10 hover:border-white/25 hover:bg-white/5 text-white/70 px-3 py-2 rounded transition-all flex items-center gap-1.5 cursor-pointer" title="Ekspor Cadangan Proyek">
               Export Backup
             </button>
-            <button onclick="importJSONBackup()" class="text-[9px] uppercase font-mono tracking-widest border border-white/10 hover:border-white/25 hover:bg-white/5 text-white/70 px-3 py-2 rounded transition-all flex items-center gap-1.5 cursor-pointer" title="Impor Cadangan Proyek">
+            <button onclick="handleProtectedAction(() => importJSONBackup())" class="text-[9px] uppercase font-mono tracking-widest border border-white/10 hover:border-white/25 hover:bg-white/5 text-white/70 px-3 py-2 rounded transition-all flex items-center gap-1.5 cursor-pointer" title="Impor Cadangan Proyek">
               Import Backup
             </button>
-            <button onclick="resetToDefaultProjects()" class="text-[9px] uppercase font-mono tracking-widest border border-red-500/10 hover:border-red-500/30 text-red-400 hover:bg-red-500/5 px-3 py-2 rounded transition-all flex items-center gap-1 cursor-pointer">
+            <button onclick="handleProtectedAction(() => resetToDefaultProjects())" class="text-[9px] uppercase font-mono tracking-widest border border-red-500/10 hover:border-red-500/30 text-red-400 hover:bg-red-500/5 px-3 py-2 rounded transition-all flex items-center gap-1 cursor-pointer">
               Reset Default
+            </button>
+            <button onclick="logout()" id="logout-btn" class="hidden text-[9px] uppercase font-mono tracking-widest border border-white/10 hover:border-white/25 hover:bg-white/5 text-white/70 px-3 py-2 rounded transition-all flex items-center gap-1 cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Logout
             </button>
           </div>
         </div>
@@ -516,6 +567,7 @@
     let selectedAccent = 'cyan';
     let currentFilterTag = 'All';
     let editingId = null;
+    let isAuthenticated = false;
 
     const DEFAULT_PROJECTS = [
       {
@@ -1045,6 +1097,82 @@
       }
     }
 
+    // Authentication handlers
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('login-error');
+      
+      // Validate credentials
+      if (username === 'reonzy' && password === 'reonzyyx') {
+        isAuthenticated = true;
+        sessionStorage.setItem('reonzy_auth_token', 'AUTHENTICATED_REONZYYX');
+        
+        // Hide login overlay
+        document.getElementById('login-overlay').classList.add('hidden');
+        
+        // Show logout button
+        document.getElementById('logout-btn').classList.remove('hidden');
+        
+        // Clear form and hide error
+        document.getElementById('login-form').reset();
+        errorDiv.classList.add('hidden');
+        
+        // Feedback
+        synthSound('success');
+        pushSystemLog("AUTHENTICATION SUCCESSFUL: Access granted to Control Panel", "success");
+        pushSystemLog("SECURE SESSION ESTABLISHED", "system");
+      } else {
+        // Failed login
+        synthSound('warning');
+        errorDiv.classList.remove('hidden');
+        pushSystemLog("AUTH FAILED: Invalid credentials detected", "warning");
+        
+        // Shake animation
+        const modal = document.querySelector('#login-overlay > div');
+        modal.style.animation = 'none';
+        setTimeout(() => {
+          modal.style.animation = 'shake 0.5s';
+        }, 10);
+      }
+    }
+
+    function logout() {
+      synthSound('click');
+      isAuthenticated = false;
+      sessionStorage.removeItem('reonzy_auth_token');
+      
+      // Show login overlay
+      document.getElementById('login-overlay').classList.remove('hidden');
+      
+      // Hide logout button
+      document.getElementById('logout-btn').classList.add('hidden');
+      
+      pushSystemLog("SESSION TERMINATED: User logged out", "warning");
+    }
+
+    function handleProtectedAction(action) {
+      if (!isAuthenticated) {
+        synthSound('warning');
+        pushSystemLog("ACCESS DENIED: Authentication required", "warning");
+        document.getElementById('login-overlay').classList.remove('hidden');
+        return;
+      }
+      action();
+    }
+
+    // Add shake animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+    `;
+    document.head.appendChild(style);
+
     // Initial setup
     window.addEventListener('load', () => {
       // Load stored portfolio or defaults
@@ -1053,6 +1181,18 @@
         projects = saved ? JSON.parse(saved) : [...DEFAULT_PROJECTS];
       } catch {
         projects = [...DEFAULT_PROJECTS];
+      }
+
+      // Initialize authentication
+      const savedAuth = sessionStorage.getItem('reonzy_auth_token');
+      if (savedAuth === 'AUTHENTICATED_REONZYYX') {
+        isAuthenticated = true;
+        document.getElementById('logout-btn').classList.remove('hidden');
+        document.getElementById('login-overlay').classList.add('hidden');
+        pushSystemLog("AUTH SESSION RESTORED FROM SECURE STORAGE", "system");
+      } else {
+        document.getElementById('login-overlay').classList.remove('hidden');
+        isAuthenticated = false;
       }
 
       initClock();
