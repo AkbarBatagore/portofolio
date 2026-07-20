@@ -97,6 +97,15 @@
       animation: float 6s infinite ease-in-out;
     }
 
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .shake-anim {
+      animation: shake 0.5s;
+    }
+
     /* Accent-specific highlights */
     .color-cyan { --accent-color: #06b6d4; --accent-glow: rgba(6, 182, 212, 0.2); }
     .color-purple { --accent-color: #d946ef; --accent-glow: rgba(217, 70, 239, 0.2); }
@@ -568,6 +577,7 @@
     let currentFilterTag = 'All';
     let editingId = null;
     let isAuthenticated = false;
+    let pendingProtectedAction = null;
 
     const DEFAULT_PROJECTS = [
       {
@@ -660,7 +670,7 @@
           osc.frequency.setValueAtTime(523.25, now);
           osc.frequency.setValueAtTime(659.25, now + 0.07);
           osc.frequency.setValueAtTime(783.99, now + 0.14);
-          osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.22);
+          gain.gain.exponentialRampToValueAtTime(1046.50, now + 0.22);
           gain.gain.setValueAtTime(0.06, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
           osc.start(now);
@@ -885,10 +895,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg> Launch Hub
               </a>
               <div class="flex gap-2">
-                <button onclick="openProjectModal(true, '${proj.id}')" class="p-1 rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all">
+                <button onclick="handleProtectedAction(() => openProjectModal(true, '${proj.id}'))" class="p-1 rounded bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all" title="Edit">
                   <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 </button>
-                <button onclick="deleteProject('${proj.id}')" class="p-1 rounded bg-white/5 hover:bg-red-950/40 text-white/40 hover:text-red-400 border border-transparent hover:border-red-500/35 transition-all">
+                <button onclick="handleProtectedAction(() => deleteProject('${proj.id}'))" class="p-1 rounded bg-white/5 hover:bg-red-950/40 text-white/40 hover:text-red-400 border border-transparent hover:border-red-500/35 transition-all" title="Delete">
                   <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
               </div>
@@ -1123,6 +1133,13 @@
         synthSound('success');
         pushSystemLog("AUTHENTICATION SUCCESSFUL: Access granted to Control Panel", "success");
         pushSystemLog("SECURE SESSION ESTABLISHED", "system");
+
+        // Execute pending action if exists
+        if (pendingProtectedAction) {
+          const action = pendingProtectedAction;
+          pendingProtectedAction = null;
+          action();
+        }
       } else {
         // Failed login
         synthSound('warning');
@@ -1131,10 +1148,10 @@
         
         // Shake animation
         const modal = document.querySelector('#login-overlay > div');
-        modal.style.animation = 'none';
+        modal.classList.add('shake-anim');
         setTimeout(() => {
-          modal.style.animation = 'shake 0.5s';
-        }, 10);
+          modal.classList.remove('shake-anim');
+        }, 500);
       }
     }
 
@@ -1155,23 +1172,28 @@
     function handleProtectedAction(action) {
       if (!isAuthenticated) {
         synthSound('warning');
-        pushSystemLog("ACCESS DENIED: Authentication required", "warning");
+        pushSystemLog("ACCESS DENIED: Authentication required to access Control Panel", "warning");
+        
+        // Store the action to execute after login
+        pendingProtectedAction = action;
+        
+        // Show login overlay
         document.getElementById('login-overlay').classList.remove('hidden');
+        
+        // Show error message
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = '✗ Silakan masuk terlebih dahulu untuk mengakses Control Panel';
+        errorDiv.classList.remove('hidden');
+        
+        // Focus on username field
+        setTimeout(() => {
+          document.getElementById('login-username').focus();
+        }, 100);
+        
         return;
       }
       action();
     }
-
-    // Add shake animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-      }
-    `;
-    document.head.appendChild(style);
 
     // Initial setup
     window.addEventListener('load', () => {
@@ -1183,7 +1205,7 @@
         projects = [...DEFAULT_PROJECTS];
       }
 
-      // Initialize authentication
+      // Initialize authentication state (don't show login overlay on load)
       const savedAuth = sessionStorage.getItem('reonzy_auth_token');
       if (savedAuth === 'AUTHENTICATED_REONZYYX') {
         isAuthenticated = true;
@@ -1191,8 +1213,10 @@
         document.getElementById('login-overlay').classList.add('hidden');
         pushSystemLog("AUTH SESSION RESTORED FROM SECURE STORAGE", "system");
       } else {
-        document.getElementById('login-overlay').classList.remove('hidden');
         isAuthenticated = false;
+        // Keep login overlay hidden until user clicks a protected action
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('logout-btn').classList.add('hidden');
       }
 
       initClock();
@@ -1203,6 +1227,7 @@
       pushSystemLog("NEURAL INTERFACE PROTOCOL V2.2 BOOTED.", "system");
       pushSystemLog("SOCIAL MODULE LOADED: email, tiktok, instagram, pinterest", "success");
       pushSystemLog("READY FOR PORTFOLIO INTERACTION.", "success");
+      pushSystemLog("AUTHENTICATION: Login required only for Control Panel", "system");
     });
   </script>
 </body>
